@@ -37,6 +37,9 @@ PLAYER_LAST_NAME = os.environ.get("PLAYER_LAST_NAME", "Noto")
 GMAIL_ADDRESS    = os.environ["GMAIL_ADDRESS"]
 GMAIL_APP_PASS   = os.environ["GMAIL_APP_PASSWORD"]
 FI_NUMBER        = os.environ["FI_NUMBER"]
+# Comma-separated list of additional full gateway addresses, e.g.:
+#   "5551234567@vtext.com, 5559876543@txt.att.net, 5555551212@tmomail.net"
+EXTRA_SMS_ADDRESSES = os.environ.get("EXTRA_SMS_ADDRESSES", "").strip()
 POLL_SECONDS     = int(os.environ.get("POLL_SECONDS", "120"))
 MAX_RUNTIME      = int(os.environ.get("MAX_RUNTIME_SECONDS", "20700"))
 # ----------------------------------------------------------
@@ -45,7 +48,9 @@ LEADERBOARD_URL = (
     "https://ace-api.usga.org/scoring/v1/leaderboard.json"
     "?championship=usso&championship-year=2026"
 )
-SMS_ADDRESS = f"{FI_NUMBER}@msg.fi.google.com"
+SMS_ADDRESSES = [f"{FI_NUMBER}@msg.fi.google.com"]
+if EXTRA_SMS_ADDRESSES:
+    SMS_ADDRESSES += [a.strip() for a in EXTRA_SMS_ADDRESSES.split(",") if a.strip()]
 
 HOLE_LABELS = {
     -3: "ALBATROSS!!", -2: "EAGLE!", -1: "Birdie",
@@ -103,16 +108,17 @@ def extract_status(data: dict, entry: dict):
 
 
 def send_text(body: str):
-    msg = EmailMessage()
-    msg["From"] = GMAIL_ADDRESS
-    msg["To"] = SMS_ADDRESS
-    msg["Subject"] = ""
-    msg.set_content(body[:450])
     ctx = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as server:
         server.login(GMAIL_ADDRESS, GMAIL_APP_PASS.replace(" ", ""))
-        server.send_message(msg)
-    print(f"  -> TEXT SENT: {body}", flush=True)
+        for addr in SMS_ADDRESSES:
+            msg = EmailMessage()
+            msg["From"] = GMAIL_ADDRESS
+            msg["To"] = addr
+            msg["Subject"] = ""
+            msg.set_content(body[:450])
+            server.send_message(msg)
+    print(f"  -> TEXT SENT to {len(SMS_ADDRESSES)} recipient(s): {body}", flush=True)
 
 
 def main():
