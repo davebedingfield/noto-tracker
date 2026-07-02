@@ -1,0 +1,39 @@
+name: Noto hole-by-hole tracker
+
+on:
+  # Manual start button (also works from the GitHub mobile app)
+  workflow_dispatch:
+
+  # Scheduled starts. GitHub cron is in UTC; Columbus, OH is EDT = UTC-4.
+  # Each run polls continuously for up to ~5h45m, then exits; the next
+  # scheduled run picks up if the round is still going.
+  schedule:
+    # Friday July 3 — morning wave (he played 2:36pm Thu, so Fri is early)
+    - cron: '45 10 * * 5'   # 6:45 AM EDT Friday
+    - cron: '45 16 * * 5'   # 12:45 PM EDT Friday (backup / late finish)
+    # Saturday & Sunday (if he makes the cut) — early tee times likely
+    - cron: '45 11 * * 6,0' # 7:45 AM EDT Sat/Sun
+    - cron: '45 17 * * 6,0' # 1:45 PM EDT Sat/Sun (backup / late finish)
+
+# Never run two trackers at once; a second start waits its turn,
+# then exits immediately if the round is already over.
+concurrency:
+  group: noto-tracker
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355   # just under GitHub's 6-hour job limit
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tracker
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          FI_NUMBER: ${{ secrets.FI_NUMBER }}
+          PLAYER_LAST_NAME: Noto
+          POLL_SECONDS: '120'
+          MAX_RUNTIME_SECONDS: '20700'
+        run: python3 noto_tracker.py
