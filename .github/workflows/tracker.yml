@@ -33,6 +33,7 @@ jobs:
           GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           FI_NUMBER: ${{ secrets.FI_NUMBER }}
+          EXTRA_SMS_ADDRESSES: ${{ secrets.EXTRA_SMS_ADDRESSES }}
           PLAYER_LAST_NAME: Noto
           POLL_SECONDS: '120'
           MAX_RUNTIME_SECONDS: '20700'
